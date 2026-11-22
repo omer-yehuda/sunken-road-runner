@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Temple Runner</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #87ceeb; font-family: Arial, sans-serif; }
+  #hud { position: fixed; top: 10px; left: 10px; color: #fff; font-size: 20px; text-shadow: 1px 1px 2px #000; }
+  #over { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; color: #fff; background: rgba(0,0,0,.5); font-size: 32px; }
+  #over small { font-size: 16px; margin-top: 10px; }
+</style>
+<script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.170.0/build/three.module.js" } }</script>
+</head>
+<body>
+<div id="hud">Score: <span id="score">0</span> &nbsp; Coins: <span id="coins">0</span></div>
+<div id="over"><div>Game Over</div><small>Press Space to restart</small></div>
+<script type="module">
+import * as THREE from 'three';
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87ceeb);
+scene.fog = new THREE.Fog(0x87ceeb, 30, 90);
+
+const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 200);
+camera.position.set(0, 4.5, 8);
+camera.lookAt(0, 1.5, -10);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+sun.position.set(5, 10, 5);
+sun.castShadow = true;
+scene.add(sun);
+
+const LANE = 2.2;
+const SEG = 20;
+
+// path segments
+const pathMat = new THREE.MeshStandardMaterial({ color: 0x9b8b6e });
+const wallMat = new THREE.MeshStandardMaterial({ color: 0x6f6350 });
+const grassMat = new THREE.MeshStandardMaterial({ color: 0x3f8f3a });
+const segments = [];
+for (let i = 0; i < 7; i++) {
+  const g = new THREE.Group();
+  const floor = new THREE.Mesh(new THREE.BoxGeometry(LANE * 3 + 1, 0.5, SEG), pathMat);
+  floor.position.y = -0.25; floor.receiveShadow = true; g.add(floor);
+  for (const s of [-1, 1]) {
+    const wall = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.2, SEG), wallMat);
+    wall.position.set(s * (LANE * 1.5 + 0.8), 0.6, 0); g.add(wall);
+    const grass = new THREE.Mesh(new THREE.BoxGeometry(30, 0.4, SEG), grassMat);
+    grass.position.set(s * 19, -0.4, 0); g.add(grass);
+    for (let k = 0; k < 2; k++) {
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.4, 3), new THREE.MeshStandardMaterial({ color: 0x7a5230 }));
+      const leaves = new THREE.Mesh(new THREE.ConeGeometry(1.8, 4, 8), new THREE.MeshStandardMaterial({ color: 0x2e7d32 }));
+      const x = s * (7 + Math.random() * 8), z = -SEG / 2 + Math.random() * SEG;
+      trunk.position.set(x, 1.3, z); leaves.position.set(x, 4.5, z); g.add(trunk, leaves);
+    }
+  }
+  g.position.z = -i * SEG + SEG;
+  scene.add(g); segments.push(g);
+}
+
+// player
+const player = new THREE.Group();
+const body = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.1, 0.5), new THREE.MeshStandardMaterial({ color: 0xd9412b }));
+body.position.y = 1.15; body.castShadow = true;
+const head = new THREE.Mesh(new THREE.SphereGeometry(0.32, 16, 16), new THREE.MeshStandardMaterial({ color: 0xf1c27d }));
+head.position.y = 2.0; head.castShadow = true;
+const legL = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.7, 0.3), new THREE.MeshStandardMaterial({ color: 0x2b3a67 }));
+const legR = legL.clone();
+legL.position.set(-0.2, 0.35, 0); legR.position.set(0.2, 0.35, 0);
+player.add(body, head, legL, legR);
+scene.add(player);
+
+// obstacles and coins
+const obstacles = [];
+const coinsArr = [];
+const boxMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b });
+const barMat = new THREE.MeshStandardMaterial({ color: 0x555555 });
+const coinMat = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.6, roughness: 0.3 });
+
+function spawnRow(z) {
+  const lane = Math.floor(Math.random() * 3) - 1;
+  const r = Math.random();
+  if (r < 0.5) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1, 1), boxMat);
+    m.position.set(lane * LANE, 0.5, z); m.castShadow = true; m.userData.type = 'low';
+    scene.add(m); obstacles.push(m);
+  } else if (r < 0.75) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(LANE * 3, 0.5, 0.5), barMat);
+    m.position.set(0, 1.9, z); m.userData.type = 'high';
+    scene.add(m); obstacles.push(m);
+  } else {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(1.6, 3, 1), boxMat);
+    m.position.set(lane * LANE, 1.5, z); m.castShadow = true; m.userData.type = 'tall';
+    scene.add(m); obstacles.push(m);
+  }
+  const cl = Math.floor(Math.random() * 3) - 1;
+  for (let i = 0; i < 5; i++) {
+    const c = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.08, 16), coinMat);
+    c.rotation.x = Math.PI / 2;
+    c.position.set(cl * LANE, 1, z - 6 - i * 1.6);
+    scene.add(c); coinsArr.push(c);
+  }
+}
+
+let lane, targetX, vy, y, sliding, speed, score, coins, alive, nextSpawn, time;
+function reset() {
+  for (const o of obstacles) scene.remove(o); obstacles.length = 0;
+  for (const c of coinsArr) scene.remove(c); coinsArr.length = 0;
+  lane = 0; targetX = 0; vy = 0; y = 0; sliding = 0; speed = 14; score = 0; coins = 0; alive = true; time = 0;
+  nextSpawn = -30;
+  for (let z = -30; z > -110; z -= 16) spawnRow(z);
+  nextSpawn = -110 + 16;
+  document.getElementById('over').style.display = 'none';
+}
+reset();
+
+function act(a) {
+  if (!alive) { if (a === 'restart') reset(); return; }
+  if (a === 'left' && lane > -1) lane--;
+  if (a === 'right' && lane < 1) lane++;
+  if (a === 'jump' && y === 0) vy = 9;
+  if (a === 'slide' && y === 0) sliding = 0.7;
+}
+addEventListener('keydown', e => {
+  if (e.code === 'ArrowLeft' || e.code === 'KeyA') act('left');
+  if (e.code === 'ArrowRight' || e.code === 'KeyD') act('right');
+  if (e.code === 'ArrowUp' || e.code === 'KeyW') act('jump');
+  if (e.code === 'ArrowDown' || e.code === 'KeyS') act('slide');
+  if (e.code === 'Space') act(alive ? 'jump' : 'restart');
+});
+let tx = 0, ty = 0;
+addEventListener('touchstart', e => { tx = e.touches[0].clientX; ty = e.touches[0].clientY; });
+addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty;
+  if (!alive) return act('restart');
+  if (Math.abs(dx) > Math.abs(dy)) act(dx > 0 ? 'right' : 'left'); else act(dy > 0 ? 'slide' : 'jump');
+});
+
+function update(dt) {
+  if (!alive) return;
+  time += dt;
+  speed += dt * 0.25;
+  const move = speed * dt;
+  score += move;
+
+  for (const s of segments) {
+    s.position.z += move;
+    if (s.position.z > SEG * 1.5) s.position.z -= SEG * segments.length;
+  }
+  targetX = lane * LANE;
+  player.position.x += (targetX - player.position.x) * Math.min(1, dt * 12);
+  vy -= 24 * dt; y += vy * dt;
+  if (y < 0) { y = 0; vy = 0; }
+  if (sliding > 0) sliding -= dt;
+  player.position.y = y;
+  player.scale.y = sliding > 0 ? 0.5 : 1;
+  const swing = Math.sin(time * speed * 0.9) * 0.6;
+  legL.rotation.x = swing; legR.rotation.x = -swing;
+
+  for (let i = obstacles.length - 1; i >= 0; i--) {
+    const o = obstacles[i];
+    o.position.z += move;
+    if (Math.abs(o.position.z) < 0.7) {
+      const t = o.userData.type;
+      const sameLane = t === 'high' || Math.abs(o.position.x - player.position.x) < 1.1;
+      if (sameLane && ((t === 'low' && y < 0.9) || (t === 'high' && sliding <= 0) || t === 'tall')) {
+        alive = false;
+        document.getElementById('over').style.display = 'flex';
+      }
+    }
+    if (o.position.z > 12) { scene.remove(o); obstacles.splice(i, 1); }
+  }
+  for (let i = coinsArr.length - 1; i >= 0; i--) {
+    const c = coinsArr[i];
+    c.position.z += move; c.rotation.z += dt * 4;
+    if (Math.abs(c.position.z) < 0.7 && Math.abs(c.position.x - player.position.x) < 0.9 && y < 1.5) {
+      coins++; scene.remove(c); coinsArr.splice(i, 1); continue;
+    }
+    if (c.position.z > 12) { scene.remove(c); coinsArr.splice(i, 1); }
+  }
+  nextSpawn += move;
+  if (nextSpawn > -110 + 16) { spawnRow(-110); nextSpawn = -110; }
+
+  document.getElementById('score').textContent = Math.floor(score);
+  document.getElementById('coins').textContent = coins;
+}
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+// test hook used by the capture script (same hook in both versions)
+window.__game = { update, act, render: () => renderer.render(scene, camera), renderer, scene,
+  state: () => ({ alive, y, sliding, lane, x: player.position.x, speed, score, coins,
+    obstacles: obstacles.map(o => ({ z: o.position.z, x: o.position.x, type: o.userData.type })),
+    coins3d: coinsArr.map(c => ({ z: c.position.z, x: c.position.x })) }) };
+
+let last = performance.now();
+function loop(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (!window.__manual) { update(dt); renderer.render(scene, camera); }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

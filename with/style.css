@@ -1,0 +1,39 @@
+@font-face { font-family: "Cardo"; src: url("fonts/Cardo-Regular.ttf"); font-weight: 400; }
+@font-face { font-family: "Cardo"; src: url("fonts/Cardo-Bold.ttf"); font-weight: 700; }
+:root {
+  --sand: #d9b98a; --gold: #ffc76b; --night: #0b1522; --teal: #35e0c8; --red: #d8362b;
+  --font: "Cardo", Georgia, "Times New Roman", serif;
+  --u: clamp(14px, 2.2vmin, 26px);
+}
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--night); font-family: var(--font); color: var(--sand); touch-action: none; }
+canvas { display: block; }
+.hud { position: fixed; inset: calc(var(--u) * 1.2) calc(var(--u) * 1.4) auto; display: flex; justify-content: space-between; pointer-events: none; }
+body.portrait .hud { top: max(calc(var(--u) * 3), env(safe-area-inset-top)); }
+.chip { display: flex; align-items: center; gap: calc(var(--u) * 0.45); padding: calc(var(--u) * 0.4) calc(var(--u) * 0.9);
+  background: linear-gradient(180deg, rgba(11,21,34,.78), rgba(11,21,34,.55)); border: 2px solid rgba(255,199,107,.65); border-radius: 999px;
+  box-shadow: 0 0 calc(var(--u) * 1.2) rgba(255,199,107,.25), inset 0 0 calc(var(--u) * 0.6) rgba(255,199,107,.15); }
+.chip b { font-size: calc(var(--u) * 1.7); color: var(--gold); font-weight: 700; letter-spacing: .04em; text-shadow: 0 0 calc(var(--u) * 0.6) rgba(255,199,107,.6); min-width: 1.2em; text-align: center; font-variant-numeric: tabular-nums; }
+.chip span { font-size: calc(var(--u) * 1.0); opacity: .8; }
+.gem { width: calc(var(--u) * 1.1); height: calc(var(--u) * 1.1); background: linear-gradient(135deg, #fff3cf, var(--gold) 45%, #c9872a); transform: rotate(45deg) scale(.8); box-shadow: 0 0 calc(var(--u) * 0.7) var(--gold); }
+.chip.pop { animation: pop .22s ease-out; }
+@keyframes pop { 40% { transform: scale(1.14); } }
+#zone { position: fixed; left: 0; right: 0; top: 16%; text-align: center; font-size: calc(var(--u) * 2.3); letter-spacing: .32em; text-transform: uppercase; color: #fff3d6;
+  text-shadow: 0 0 calc(var(--u) * 1) rgba(255,199,107,.9), 0 0 12px rgba(11,21,34,.85), 0 2px 0 rgba(0,0,0,.6); opacity: 0; transform: translateY(8px); transition: opacity .5s, transform .5s; pointer-events: none; }
+body.portrait #zone { top: 20%; font-size: calc(var(--u) * 1.7); }
+#zone.on { opacity: 1; transform: none; }
+#over { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: radial-gradient(circle, rgba(11,21,34,.55), rgba(11,21,34,.92)); }
+#over.on, #start.on { display: flex; }
+#over.on { align-items: flex-start; padding-top: 8vh; box-sizing: border-box; animation: fade .35s ease-out; }
+@keyframes fade { from { opacity: 0; } }
+#start { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: radial-gradient(circle, rgba(11,21,34,.35), rgba(11,21,34,.8)); }
+.keys { margin: calc(var(--u) * 0.4) 0; font-size: calc(var(--u) * 1.05); } .keys b { color: var(--gold); }
+.go { margin: calc(var(--u) * 1) 0 0; font-size: calc(var(--u) * 1.2); letter-spacing: .1em; text-transform: uppercase; color: var(--gold); }
+.row.new b { color: var(--teal); } .row.new span::after { content: "  new"; color: var(--teal); }
+.card { min-width: min(80vw, 420px); padding: calc(var(--u) * 1.6); border: 2px solid rgba(255,199,107,.7); border-radius: calc(var(--u) * 0.8); background: rgba(11,21,34,.85); text-align: center; box-shadow: 0 0 calc(var(--u) * 3) rgba(255,199,107,.25); }
+.card h1 { margin: 0 0 calc(var(--u) * 0.8); font-size: calc(var(--u) * 2); letter-spacing: .12em; text-transform: uppercase; color: var(--gold); }
+.row { display: flex; justify-content: space-between; font-size: calc(var(--u) * 1.1); padding: calc(var(--u) * 0.3) 0; border-bottom: 1px solid rgba(217,185,138,.25); }
+.row b { color: #fff3d6; }
+button { margin-top: calc(var(--u) * 1.1); font: inherit; font-size: calc(var(--u) * 1.2); letter-spacing: .1em; text-transform: uppercase; color: var(--night); background: var(--gold); border: 0; border-radius: 999px; padding: calc(var(--u) * 0.6) calc(var(--u) * 1.8); min-height: 48px; cursor: pointer; }
+button:hover { filter: brightness(1.1); } button:active { transform: scale(.97); }
+button:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
+.bar { height: 4px; margin-top: calc(var(--u) * 0.9); background: rgba(217,185,138,.25); border-radius: 2px; overflow: hidden; } .bar i { display: block; height: 100%; width: 0; background: var(--gold); transition: width .2s; }
