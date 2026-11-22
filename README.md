@@ -1,5 +1,7 @@
 # Same prompt, two games: a temple runner without and with the Army plugin
 
+[![Play both games](assets/with.jpg)](https://omer-yehuda.github.io/sunken-road-runner/)
+
 One prompt, run twice. `without/` is what came back from the prompt alone. `with/` is the same prompt taken through the [Army plugin](https://github.com/omer-yehuda/plugins/tree/main/plugins/army): a plan first, then a build, then two cold reviews and one fix loop.
 
 The prompt is in [PROMPT.md](PROMPT.md).
@@ -19,13 +21,18 @@ The game rules are the same in both: three lanes, jump, slide, coins, three kind
 
 ## Play
 
-Serve the folder with any static server and open `without/` or `with/`:
+Play both in your browser, no install: **https://omer-yehuda.github.io/sunken-road-runner/**
+
+- Claude alone: https://omer-yehuda.github.io/sunken-road-runner/without/
+- With the Army plugin: https://omer-yehuda.github.io/sunken-road-runner/with/ (loads its art from the web, give it a few seconds)
+
+Arrow keys or WASD: change lane, jump, slide. On a phone: swipe.
+
+To run it locally instead, serve the folder with any static server and open `without/` or `with/`:
 
 ```
 npx serve .
 ```
-
-Arrow keys or WASD: change lane, jump, slide. On a phone: swipe.
 
 ## How the test was run (read this before quoting it)
 
